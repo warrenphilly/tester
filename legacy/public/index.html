@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GPT-3 Chat</title>
+</head>
+<body>
+  <input type="text" id="question" placeholder="Ask a question">
+  <button id="submit">Submit</button>
+  <button id="toggle-recording">Start Recording</button>
+  <audio id="responseAudio" hidden></audio>
+
+  <script>
+    document.getElementById('submit').addEventListener('click', () => {
+      const question = document.getElementById('question').value;
+      sendQuestion(question);
+    });
+
+    let recognition;
+    let isRecording = false;
+    const toggleRecordingBtn = document.getElementById('toggle-recording');
+
+    toggleRecordingBtn.addEventListener('click', () => {
+      if ('webkitSpeechRecognition' in window) {
+        if (!isRecording) {
+          startRecording();
+          toggleRecordingBtn.textContent = 'Stop Recording';
+          isRecording = true;
+        } else {
+          stopRecording();
+          // No need to change text here as it will be set to "Thinking..." in stopRecording()
+        }
+      } else {
+        alert('Your browser does not support speech recognition.');
+      }
+    });
+
+    function startRecording() {
+      recognition = new webkitSpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      let silenceTimeout = null;
+
+      recognition.onresult = function(event) {
+        clearTimeout(silenceTimeout);
+        silenceTimeout = setTimeout(function() {
+          stopRecording();
+        }, 3000);
+
+        const transcript = event.results[event.results.length - 1][0].transcript;
+        document.getElementById('question').value = transcript;
+      };
+
+      recognition.onstart = function() {
+        clearTimeout(silenceTimeout);
+        silenceTimeout = setTimeout(function() {
+          stopRecording();
+        }, 3000);
+      };
+
+      recognition.onend = function() {
+        clearTimeout(silenceTimeout);
+        const transcribedText = document.getElementById('question').value;
+        if (transcribedText) {
+          sendQuestion(transcribedText);
+        }
+      };
+
+      recognition.start();
+    }
+
+    function stopRecording() {
+      recognition.stop();
+      toggleRecordingBtn.textContent = 'Thinking...';
+      toggleRecordingBtn.disabled = true; // Disable the button when thinking
+    }
+
+    async function sendQuestion(question) {
+      const response = await fetch('/ask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ question })
+      });
+
+      const data = await response.json();
+      toggleRecordingBtn.disabled = false; // Re-enable the button after processing
+      if (data.audioUrl) {
+        toggleRecordingBtn.textContent = 'Start Recording';
+        const audioElement = document.getElementById('responseAudio');
+        audioElement.src = data.audioUrl;
+        audioElement.play();
+      } else {
+        console.log("No audio URL received");
+        toggleRecordingBtn.textContent = 'Start Recording'; // Update text if needed
+      }
+    }
+  </script>
+</body>
+</html>
