@@ -16,7 +16,7 @@ const openai = new OpenAI({ apiKey: OPENAI_KEY });
 app.use(express.json());
 app.use(express.static("public"));
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? 'your-production-domain.com' : 'http://localhost:3000',
+  origin: process.env.NODE_ENV === 'production' ? 'https://l-e-v-i-interface-vlxb.vercel.app/' : 'http://localhost:3000',
 }));
 // Adjusting __dirname calculation for ES Modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
