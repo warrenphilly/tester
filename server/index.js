@@ -66,6 +66,7 @@ app.post("/ask", async (req, res) => {
     const audioFileName = `audio_${new Date().getTime()}.mp3`;
     const audioFilePath = path.join(tempDirectory, audioFileName);
     await fs.promises.writeFile(audioFilePath, audioBuffer);
+    console.log(`Audio file written to ${audioFilePath}`)
 
     res.json({ audioUrl: `/audio/${audioFileName}`, text: answer });
   } catch (error) {
